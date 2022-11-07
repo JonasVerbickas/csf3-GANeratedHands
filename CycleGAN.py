@@ -25,10 +25,8 @@ class CycleGAN(pl.LightningModule):
         self.save_hyperparameters()
         # networks
         self.synth_generator = Generator()
-        wandb_logger.log_text("generator_summary", model_summary(self.synth_generator, max_depth=-1))
         self.real_generator = Generator()
         self.synth_discriminator = Discriminator()
-        wandb_logger.log_text("discriminator_summary", model_summary(self.synth_discriminator, max_depth=-1))
         self.real_discriminator = Discriminator()
         self.l1_loss = nn.L1Loss()
         self.synth_label = torch.zeros(bat)

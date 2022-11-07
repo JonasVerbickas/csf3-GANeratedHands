@@ -7,45 +7,50 @@ import wandb
 import torch
 import pytorch_lightning as pl
 import torchvision.transforms as T
-from OriginalCycleGAN.MyOriginalCycleGAN import CycleGAN as GAN
+from CycleGAN import CycleGAN
 from HandDataModule import HandsDataModule
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks.progress import TQDMProgressBar
+from pytorch_lightning.utilities import model_summary
 
 # Check if GPU can be used
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 if device == 'cpu':
     raise Exception("This shouldn't be ran on a CPU. Please, switch to a GPU/TPU env")
 
-# Save current config to wandb
+# Hyperparams for training
 config = {
     "LEARNING_RATE": 1e-4,
     "BATCH_SIZE": 8,
     "NUM_EPOCHS": 300,
     "TRAIN_SPLIT": 0.8,
     "CPU_COUNT": int(os.cpu_count()),
+    "MODEL_SUMMARY": model_summary(CycleGAN, max_depth=-1),
     "TARGET_IMG_SIZE": (256, 256),
     "PIN_MEMORY": True if device == 'cuda' else False,
     "CYCLE_CONSISTENCY_WEIGHT": 10.0
 }
+# Save current config to wandb
 wandb.init(project="CycleGAN", entity="jonasv", config=config)
 wandb_logger = WandbLogger(log_model='all', project="CycleGAN")
 
+# Open dataset
 dm = HandsDataModule()
 dm.setup()
+# Save a list of images that will ganerated and saved to wandb after each validation
+# (this is a good way to observe how the training is going visually)
 list_of_images_for_visual_benchmarking = None
 for i in dm.val_dataloader():
     list_of_images_for_visual_benchmarking = i[0]
     break
 wandb_logger.log_image(key="original_images",
                        images=[T.ToPILImage()(img_tensor) for img_tensor in list_of_images_for_visual_benchmarking])
-
-model = GAN(config, wandb_logger, list_of_images_for_visual_benchmarking)
+# Initialize model
+model = CycleGAN(config, wandb_logger, list_of_images_for_visual_benchmarking)
+# Initilize training
 trainer = pl.Trainer(
     accelerator="gpu",
     devices=1,
     max_epochs=config['NUM_EPOCHS'],
-    callbacks=[TQDMProgressBar(refresh_rate=20)],
     logger=wandb_logger,
     default_root_dir='./saved_models/'
 )

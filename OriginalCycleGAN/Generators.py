@@ -120,7 +120,7 @@ class Resnet(nn.Module):
     """Resnet-based generator consisting of a downsampling step (7x7 conv to encode color features
     + two 3x3 2-strided convs for the downsampling), Resnet blocks in between, and the upsampling
     step (two 3x3 2-strided transposed convs + one 7x7 final conv)"""
-    def __init__(self, hparams, deconvolution=True, n_blocks=6):
+    def __init__(self, deconvolution=True, n_blocks=6):
         """Construct a Resnet-based generator
         Parameters:
             use_dropout (bool)  -- if use dropout layers
@@ -129,6 +129,12 @@ class Resnet(nn.Module):
         super(Resnet, self).__init__()
 
         norm_layer = functools.partial(nn.BatchNorm2d, affine=True, track_running_stats=True)
+
+        class hparams:
+            inp_ch = 3
+            ngf = 64
+            use_dropout = True
+
 
         # First 7x7 convolution to encode color information + 2 downsampling steps
         model = [nn.ReflectionPad2d(3),

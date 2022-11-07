@@ -38,8 +38,8 @@ class HandsDataModule(pl.LightningDataModule):
         self.config = config
 
     def setup(self, stage=None):
-        synth_hands_dataset = CenterCropImageDataset("./synth_all_male_noobject_with_white_bg")
-        real_hands_dataset = CenterCropImageDataset("./RealHandsForKagglev2")
+        synth_hands_dataset = CenterCropImageDataset("../synth_all_male_noobject_with_white_bg")
+        real_hands_dataset = CenterCropImageDataset("../RealHandsForKagglev2")
         concat_dataset = ConcatDataset([synth_hands_dataset, real_hands_dataset])
         # Assign train/val datasets for use in dataloaders
         train_size = round(len(concat_dataset) * self.config['TRAIN_SPLIT'])

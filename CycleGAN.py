@@ -1,7 +1,7 @@
 import torch.nn.functional as F
 import torchvision.transforms as T
 from OriginalCycleGAN.Discriminators import PixelDiscriminator as Discriminator
-from OriginalCycleGAN.Generators import Generator
+from OriginalCycleGAN.Generators import Resnet as Generator 
 from itertools import chain
 import torch.nn as nn
 import pytorch_lightning as pl

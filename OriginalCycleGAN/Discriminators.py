@@ -1,5 +1,5 @@
 import torch.nn as nn
-import torch
+import torchvision
 
 
 def _discriminator_layer(in_feat, out_feat, ksize=4, stride=2):

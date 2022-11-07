@@ -10,7 +10,6 @@ import torchvision.transforms as T
 from CycleGAN import CycleGAN
 from HandDataModule import HandsDataModule
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.utilities import model_summary
 
 # Check if GPU can be used
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -33,7 +32,7 @@ wandb.init(project="CycleGAN", entity="jonasv", config=config)
 wandb_logger = WandbLogger(log_model='all', project="CycleGAN")
 
 # Open dataset
-dm = HandsDataModule()
+dm = HandsDataModule(config)
 dm.setup()
 # Save a list of images that will ganerated and saved to wandb after each validation
 # (this is a good way to observe how the training is going visually)
@@ -45,7 +44,6 @@ wandb_logger.log_image(key="original_images",
                        images=[T.ToPILImage()(img_tensor) for img_tensor in list_of_images_for_visual_benchmarking])
 # Initialize model
 model = CycleGAN(config, wandb_logger, list_of_images_for_visual_benchmarking)
-wandb_logger.log_text("model_summary", model_summary(model, max_depth=-1))
 # Initilize training
 trainer = pl.Trainer(
     accelerator="gpu",

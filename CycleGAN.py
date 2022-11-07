@@ -1,6 +1,6 @@
 import torch.nn.functional as F
 import torchvision.transforms as T
-from OriginalCycleGAN.MyOriginalDiscriminator import Discriminator
+from OriginalCycleGAN.Discriminators import PixelDiscriminator as Discriminator
 from OriginalCycleGAN.MyOriginalGenerator import Generator
 from itertools import chain
 import torch.nn as nn

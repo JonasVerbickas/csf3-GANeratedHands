@@ -2,9 +2,9 @@ import torch.nn as nn
 import torch
 
 
-def _discriminator_layer(in_feat, out_feat, stride=2):
+def _discriminator_layer(in_feat, out_feat, ksize=4, stride=2):
     return nn.Sequential(
-        nn.Conv2d(in_channels=in_feat, out_channels=out_feat, kernel_size=4, stride=stride),
+        nn.Conv2d(in_channels=in_feat, out_channels=out_feat, kernel_size=ksize, stride=stride),
         nn.BatchNorm2d(out_feat),
         nn.LeakyReLU(0.2)
     )
@@ -17,9 +17,9 @@ def _generate_layer_list(n):
     return nn.ModuleList(conv_list)
 
 
-class Discriminator(nn.Module):
+class PatchDiscriminator(nn.Module):
     def __init__(self):
-        super(Discriminator, self).__init__()
+        super(PatchDiscriminator, self).__init__()
         self.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=4, stride=2)
         self.leaky = nn.LeakyReLU(0.2)
         self.convList = _generate_layer_list(3)
@@ -34,3 +34,17 @@ class Discriminator(nn.Module):
         x = self.sigmoid(x)
         #x = x.view(x.shape[0], -1)
         return x #torch.mean(x, 1)
+
+
+class PixelDiscriminator(nn.Module):
+    def __init__(self):
+        super(PixelDiscriminator, self).__init__()
+        layers = [_discriminator_layer(3, 64, ksize=1),
+        _discriminator_layer(64, 128, ksize=1),
+        _discriminator_layer(128, 1, ksize=1),
+            nn.Sigmoid()
+        ]
+        self.model = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.model(x)

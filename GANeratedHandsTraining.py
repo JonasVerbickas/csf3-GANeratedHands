@@ -24,7 +24,6 @@ config = {
     "NUM_EPOCHS": 300,
     "TRAIN_SPLIT": 0.8,
     "CPU_COUNT": int(os.cpu_count()),
-    "MODEL_SUMMARY": model_summary(CycleGAN, max_depth=-1),
     "TARGET_IMG_SIZE": (256, 256),
     "PIN_MEMORY": True if device == 'cuda' else False,
     "CYCLE_CONSISTENCY_WEIGHT": 10.0
@@ -46,6 +45,7 @@ wandb_logger.log_image(key="original_images",
                        images=[T.ToPILImage()(img_tensor) for img_tensor in list_of_images_for_visual_benchmarking])
 # Initialize model
 model = CycleGAN(config, wandb_logger, list_of_images_for_visual_benchmarking)
+wandb_logger.log_text("model_summary", model_summary(model, max_depth=-1))
 # Initilize training
 trainer = pl.Trainer(
     accelerator="gpu",

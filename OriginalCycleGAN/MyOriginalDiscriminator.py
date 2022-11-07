@@ -32,5 +32,5 @@ class Discriminator(nn.Module):
             x = conv(x)
         x = self.last_conv(x)
         x = self.sigmoid(x)
-        x = x.view(x.shape[0], -1)
-        return torch.mean(x, 1)
+        #x = x.view(x.shape[0], -1)
+        return x #torch.mean(x, 1)

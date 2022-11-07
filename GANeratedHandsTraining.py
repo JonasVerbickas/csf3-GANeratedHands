@@ -39,6 +39,7 @@ dm.setup()
 list_of_images_for_visual_benchmarking = None
 for i in dm.val_dataloader():
     list_of_images_for_visual_benchmarking = i[0]
+    # use only the first batch
     break
 wandb_logger.log_image(key="original_images",
                        images=[T.ToPILImage()(img_tensor) for img_tensor in list_of_images_for_visual_benchmarking])

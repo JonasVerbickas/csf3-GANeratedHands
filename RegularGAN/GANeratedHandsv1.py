@@ -15,16 +15,9 @@ import torchvision.transforms as T
 
 print("torch.__version__", torch.__version__)
 
-# In[3]:
-
-
 # Allow for GPU use
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 print(device)
-
-
-# In[4]:
-
 
 config={
     "LEARNING_RATE": 1e-4,
@@ -36,10 +29,6 @@ config={
     "TARGET_IMG_SIZE": (256, 256),
     "PIN_MEMORY": True if device == 'cuda' else False
 }
-
-
-# In[5]:
-
 
 class CenterCropImageDataset(Dataset):
     def __init__(self, dataset_dir):
@@ -56,14 +45,8 @@ class CenterCropImageDataset(Dataset):
         return len(self.image_filenames)
 
 
-# In[6]:
-
-
 synth_hands_dataset = CenterCropImageDataset("./synth_all_male_noobject_with_white_bg")
 real_hands_dataset = CenterCropImageDataset("./RealHandsForKagglev2")
-
-
-# In[7]:
 
 real_train_dataset, real_val_dataset = torch.utils.data.random_split(real_hands_dataset, [round(len(real_hands_dataset)*config['TRAIN_SPLIT']), round(len(real_hands_dataset)*(1-config['TRAIN_SPLIT']))])
 synth_train_dataset, synth_val_dataset = torch.utils.data.random_split(synth_hands_dataset, [round(len(synth_hands_dataset)*config['TRAIN_SPLIT']), round(len(synth_hands_dataset)*(1-config['TRAIN_SPLIT']))])

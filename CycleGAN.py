@@ -112,12 +112,9 @@ class CycleGAN(pl.LightningModule):
         self.wandb_logger.log_image(key="generated_images", images=list_of_ganerated_ims)
 
     def configure_optimizers(self):
-        lr = self.hparams.lr
-        b1 = self.hparams.b1
-        b2 = self.hparams.b2
-        opt_gs = torch.optim.Adam(chain(self.synth_generator.parameters(), self.real_generator.parameters()), lr=lr,
-                                  betas=(b1, b2))
-        opt_real_d = torch.optim.Adam(self.real_discriminator.parameters(), lr=lr, betas=(b1, b2))
-        opt_synth_d = torch.optim.Adam(self.synth_discriminator.parameters(), lr=lr, betas=(b1, b2))
+        lr = self.config["LEARNING_RATE"]
+        opt_gs = torch.optim.Adam(chain(self.synth_generator.parameters(), self.real_generator.parameters()), lr=lr)
+        opt_real_d = torch.optim.Adam(self.real_discriminator.parameters(), lr=lr)
+        opt_synth_d = torch.optim.Adam(self.synth_discriminator.parameters(), lr=lr)
         return [opt_gs, opt_real_d, opt_synth_d]
 

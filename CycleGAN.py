@@ -6,7 +6,6 @@ from itertools import chain
 import torch.nn as nn
 import pytorch_lightning as pl
 import torch
-from pytorch_lightning.utilities import model_summary
 
 
 class CycleGAN(pl.LightningModule):
@@ -38,7 +37,7 @@ class CycleGAN(pl.LightningModule):
 
     @staticmethod
     def adversarial_loss(y_hat, y):
-        return F.binary_cross_entropy(y_hat, y)
+        return F.mse_loss(y_hat, y)
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         real_batch, synth_batch = batch

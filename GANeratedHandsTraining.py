@@ -23,6 +23,7 @@ config = {
     "BATCH_SIZE": 8,
     "NUM_EPOCHS": 300,
     "TRAIN_SPLIT": 0.8,
+    "RAND_ROTATION": 0,
     "CPU_COUNT": int(os.cpu_count()),
     "TARGET_IMG_SIZE": (256, 256),
     "PIN_MEMORY": True if device == 'cuda' else False,

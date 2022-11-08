@@ -88,9 +88,11 @@ class CycleGAN(pl.LightningModule):
             # GANerator fooling discriminators
             generated_into_real = self.real_generator(synth_batch)
             generated_into_synth = self.synth_generator(real_batch)
-            real_discriminator_pred = self.real_discriminator(T.RandomRotation(180)(generated_into_real))
+            real_discriminator_pred = self.real_discriminator(
+                T.RandomRotation(self.config['RAND_ROTATION'])(generated_into_real))
             real_g_loss = self.adversarial_loss(real_discriminator_pred, synth=True)
-            synth_discriminator_pred = self.synth_discriminator(T.RandomRotation(180)(generated_into_synth))
+            synth_discriminator_pred = self.synth_discriminator(
+                T.RandomRotation(self.config['RAND_ROTATION'])(generated_into_synth))
             synth_g_loss = self.adversarial_loss(synth_discriminator_pred, synth=False)
             g_loss += real_g_loss + synth_g_loss
             # identity loss
@@ -108,15 +110,16 @@ class CycleGAN(pl.LightningModule):
 
         # train real_discriminator
         if optimizer_idx == 1:
-            real_batch = T.RandomRotation(180)(real_batch)
-            fake_batch = T.RandomRotation(180)(self.real_generator(synth_batch))
+            real_batch = T.RandomRotation(self.config['RAND_ROTATION'])(real_batch)
+            fake_batch = T.RandomRotation(self.config['RAND_ROTATION'])(self.real_generator(synth_batch))
             d_loss = self.discrimTrainStep(self.real_discriminator, is_it_a_synth_disc=False, real_batch=real_batch, fake_batch=fake_batch)
             return d_loss
 
         # train synth_discriminator
         if optimizer_idx == 2:
-            real_batch = T.RandomRotation(180)(synth_batch)
-            fake_batch = T.RandomRotation(180)(self.synth_generator(real_batch))
+            real_batch = T.RandomRotation(self.config['RAND_ROTATION'])(synth_batch)
+            fake_batch = T.RandomRotation(self.config['RAND_ROTATION'])(
+                self.synth_generator(real_batch))
             d_loss = self.discrimTrainStep(self.synth_discriminator, is_it_a_synth_disc=True, real_batch=real_batch, fake_batch=fake_batch)
             return d_loss
 

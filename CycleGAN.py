@@ -103,7 +103,7 @@ class CycleGAN(pl.LightningModule):
         self.log("val_loss", fake_loss)
 
     def on_validation_epoch_end(self):
-        z = self.list_of_images_for_visual_benchmarking.type_as(self.real_generator.res_blocks[0].weight)
+        z = self.list_of_images_for_visual_benchmarking.type_as(self.real_generator)
         # log sampled images
         ganerated_images = self(z)
         list_of_ganerated_ims = [T.ToPILImage()(img_tensor) for img_tensor in ganerated_images]

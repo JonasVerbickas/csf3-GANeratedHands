@@ -24,7 +24,7 @@ class Generator(nn.Module):
         #for param in resnet50.parameters():
         #    param.requires_grad = False
         self.res_blocks = nn.Sequential(*list(resnet50.children())[:6])
-        self.res_blocks.requires_grad = False
+        #self.res_blocks.requires_grad = False
         self.upsample_blocks = nn.Sequential(
             Conv2dTransposeBlock(512, 256, kernel_size=3, stride=2, padding=1, output_padding=1),
             Conv2dTransposeBlock(256, 128, kernel_size=3, stride=2, padding=1, output_padding=1),

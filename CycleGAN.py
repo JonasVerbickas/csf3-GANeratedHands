@@ -35,12 +35,44 @@ class CycleGAN(pl.LightningModule):
         return self.synth_generator(synth)
 
     @staticmethod
-    def adversarial_loss(disc_output, real=True):
-        if real:
-            ground_truth = torch.ones_like(disc_output)
-        else:
+    def adversarial_loss(disc_output, synth=True):
+        if synth:
             ground_truth = torch.zeros_like(disc_output)
+        else:
+            ground_truth = torch.ones_like(disc_output)
         return F.mse_loss(disc_output, ground_truth)
+    
+    @staticmethod
+    def calcAccuracy(disc_preds, synth=True):
+        # disc output is just cnn output - NOT A SINGLE VALUE
+        mean_preds = disc_preds.flatten(2).mean(-1)
+        thresholded_preds = mean_preds > 0.5
+        acc = torch.count_nonzero(thresholded_preds) / thresholded_preds.size()[0]
+        if synth:
+            return 1-acc
+        else:
+            return acc
+
+
+    def discrimTrainStep(self, discrim, is_it_a_synth_disc, real_batch, fake_batch):
+        """
+        Since I'm training a cycleGAN, it requires very similar steps to be taken on both discriminators.
+        """
+        name_used_for_logging = "synth_d" if is_it_a_synth_disc else "real_d"
+        for param in discrim.parameters():
+            param.requires_grad = True
+        real_discrim_prediction = discrim(T.RandomRotation(180)(real_batch))
+        real_loss = self.adversarial_loss(real_discrim_prediction, synth=is_it_a_synth_disc)
+        real_acc = self.calcAccuracy(real_discrim_prediction, synth=is_it_a_synth_disc)
+        self.log(f'{name_used_for_logging}_real_acc', real_acc)
+        fake_discrim_prediction = discrim(T.RandomRotation(180)(fake_batch))
+        fake_acc = self.calcAccuracy(fake_discrim_prediction, synth=(not is_it_a_synth_disc))
+        self.log(f'{name_used_for_logging}_fake_acc', fake_acc)
+        fake_loss = self.adversarial_loss(fake_discrim_prediction, synth=(not is_it_a_synth_disc))
+        d_loss = real_loss + fake_loss
+        self.log(f"{name_used_for_logging}_loss", d_loss)
+        return d_loss
+
 
     def training_step(self, batch, batch_idx, optimizer_idx):
         real_batch, synth_batch = batch
@@ -57,9 +89,9 @@ class CycleGAN(pl.LightningModule):
             generated_into_real = self.real_generator(synth_batch)
             generated_into_synth = self.synth_generator(real_batch)
             real_discriminator_pred = self.real_discriminator(T.RandomRotation(180)(generated_into_real))
-            real_g_loss = self.adversarial_loss(real_discriminator_pred, real=False)
+            real_g_loss = self.adversarial_loss(real_discriminator_pred, synth=True)
             synth_discriminator_pred = self.synth_discriminator(T.RandomRotation(180)(generated_into_synth))
-            synth_g_loss = self.adversarial_loss(synth_discriminator_pred, real=True)
+            synth_g_loss = self.adversarial_loss(synth_discriminator_pred, synth=False)
             g_loss += real_g_loss + synth_g_loss
             # identity loss
             idt_real = self.real_generator(real_batch)
@@ -76,22 +108,16 @@ class CycleGAN(pl.LightningModule):
 
         # train real_discriminator
         if optimizer_idx == 1:
-            for param in self.real_discriminator.parameters():
-                param.requires_grad = True
-            real_loss = self.adversarial_loss(self.real_discriminator(T.RandomRotation(180)(real_batch)), real=True)
-            fake_loss = self.adversarial_loss(self.real_discriminator(T.RandomRotation(180)(self.real_generator(synth_batch))), real=False)
-            d_loss = real_loss + fake_loss
-            self.log("real_d_loss", d_loss, prog_bar=True)
+            real_batch = T.RandomRotation(180)(real_batch)
+            fake_batch = T.RandomRotation(180)(self.real_generator(synth_batch))
+            d_loss = self.discrimTrainStep(self.real_discriminator, is_it_a_synth_disc=False, real_batch=real_batch, fake_batch=fake_batch)
             return d_loss
 
         # train synth_discriminator
         if optimizer_idx == 2:
-            for param in self.synth_discriminator.parameters():
-                param.requires_grad = True
-            real_loss = self.adversarial_loss(self.synth_discriminator(T.RandomRotation(180)(synth_batch)), real=False)
-            fake_loss = self.adversarial_loss(self.synth_discriminator(T.RandomRotation(180)(self.synth_generator(real_batch))), real=True)
-            d_loss = real_loss + fake_loss
-            self.log("synth_d_loss", d_loss, prog_bar=True)
+            real_batch = T.RandomRotation(180)(synth_batch)
+            fake_batch = T.RandomRotation(180)(self.synth_generator(real_batch))
+            d_loss = self.discrimTrainStep(self.synth_discriminator, is_it_a_synth_disc=True, real_batch=real_batch, fake_batch=fake_batch)
             return d_loss
 
     def validation_step(self, batch, batch_idx):
@@ -99,7 +125,7 @@ class CycleGAN(pl.LightningModule):
         real_batch, synth_batch = batch
         self.real_label = self.real_label.type_as(real_batch)
         self.synth_label = self.synth_label.type_as(synth_batch)
-        fake_loss = self.adversarial_loss(self.real_discriminator(self.real_generator(synth_batch).detach()), real=False)
+        fake_loss = self.adversarial_loss(self.real_discriminator(self.real_generator(synth_batch).detach()), synth=True)
         self.log("val_loss", fake_loss)
 
     def on_validation_epoch_end(self):

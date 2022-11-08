@@ -10,35 +10,45 @@ def _discriminator_layer(in_feat, out_feat, ksize=4, stride=2):
     )
 
 
-def _generate_layer_list(n):
+def convolutionalEncoder(layers):
     conv_list = []
-    for i in range(n):
+    for i in range(layers):
         conv_list.append(_discriminator_layer(64 * 2 ** i, 64 * 2 ** (i + 1), 2))
-    return nn.ModuleList(conv_list)
+    return nn.Sequential(*conv_list)
 
 
 class PatchDiscriminator(nn.Module):
     def __init__(self):
         super(PatchDiscriminator, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels=3, out_channels=64, kernel_size=4, stride=2)
-        self.leaky = nn.LeakyReLU(0.2)
-        self.convList = _generate_layer_list(3)
-        self.last_conv = nn.Conv2d(in_channels=512, out_channels=1, kernel_size=4, stride=2)
-        self.sigmoid = nn.Sigmoid()
+        conv1 = nn.Sequential(nn.Conv2d(in_channels=3, out_channels=64, kernel_size=4, stride=2), nn.LeakyReLU(0.2))
+        inbetween_conv = convolutionalEncoder(3)
+        last_conv = nn.Conv2d(in_channels=512, out_channels=1, kernel_size=4, stride=2)
+        sigmoid = nn.Sigmoid()
+        layers = [conv1, inbetween_conv, last_conv, sigmoid]
+        self.model = nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.leaky(self.conv1(x))
-        for conv in self.convList:
-            x = conv(x)
-        x = self.last_conv(x)
-        x = self.sigmoid(x)
-        #x = x.view(x.shape[0], -1)
-        return x #torch.mean(x, 1)
+        return self.model(x)
 
 
 class PixelDiscriminator(nn.Module):
     def __init__(self):
         super(PixelDiscriminator, self).__init__()
+        layers = [_discriminator_layer(3, 64, ksize=1),
+        _discriminator_layer(64, 128, ksize=1),
+        _discriminator_layer(128, 1, ksize=1),
+            nn.Sigmoid()
+        ]
+        self.model = nn.Sequential(*layers)
+
+    def forward(self, x):
+        return self.model(x)
+
+
+class PerceptualDiscriminator(nn.Module):
+    def __init__(self):
+        super(PerceptualDiscriminator, self).__init__()
+        
         layers = [_discriminator_layer(3, 64, ksize=1),
         _discriminator_layer(64, 128, ksize=1),
         _discriminator_layer(128, 1, ksize=1),

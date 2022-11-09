@@ -44,7 +44,7 @@ for i in dm.val_dataloader():
     # use only the first batch
     break
 for i in dm.train_dataloader():
-    list_of_images_for_visual_benchmarking = torch.cat(i[0], list_of_images_for_visual_benchmarking)
+    list_of_images_for_visual_benchmarking = torch.cat([i[0], list_of_images_for_visual_benchmarking])
     # use only the first batch
     break
 wandb_logger.log_image(key="original_images",

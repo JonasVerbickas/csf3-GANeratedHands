@@ -11,6 +11,7 @@ from CycleGAN import CycleGAN
 from HandDataModule import HandsDataModule
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.utilities.model_summary import ModelSummary
+import Helpers
 
 # Check if GPU can be used
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -33,26 +34,14 @@ config = {
 wandb.init(project="CycleGAN", entity="jonasv", config=config)
 wandb_logger = WandbLogger(log_model='all', project="CycleGAN")
 
-# Open dataset
+# Open/setup dataset
 dm = HandsDataModule(config)
 dm.setup()
 # Save a list of images that will ganerated and saved to wandb after each validation
 # (this is a good way to observe how the training is going visually)
-list_of_images_for_visual_benchmarking = None
-for i in dm.train_dataloader():
-    list_of_images_for_visual_benchmarking = torch.cat([i[0], list_of_images_for_visual_benchmarking])
-    wandb_logger.log_image(key="train_original_images",
-                        images=[T.ToPILImage()(img_tensor) for img_tensor in list_of_images_for_visual_benchmarking])
-    # use only the first batch
-    break
-for i in dm.val_dataloader():
-    list_of_images_for_visual_benchmarking = i[0]
-    wandb_logger.log_image(key="validation_original_images",
-                        images=[T.ToPILImage()(img_tensor) for img_tensor in list_of_images_for_visual_benchmarking])
-    # use only the first batch
-    break
+synth_for_visual_benchmarking, real_for_visual_benchmarking = Helpers.getImagesForVisualBenchmarking(dm, wandb_logger)
 # Initialize model
-model = CycleGAN(config, wandb_logger, list_of_images_for_visual_benchmarking)
+model = CycleGAN(config, wandb_logger, synth_for_visual_benchmarking, real_for_visual_benchmarking)
 print(ModelSummary(model))
 # Initilize training
 trainer = pl.Trainer(

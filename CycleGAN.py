@@ -3,6 +3,7 @@ import torchvision.transforms as T
 from OriginalCycleGAN.Discriminators import PatchDiscriminator as Discriminator
 from OriginalCycleGAN.Generators import Resnet as Generator 
 from itertools import chain
+import Helpers
 import torch.nn as nn
 import pytorch_lightning as pl
 import torch
@@ -13,14 +14,16 @@ class CycleGAN(pl.LightningModule):
             self,
             config: dict,
             wandb_logger,
-            list_of_images_for_visual_benchmarking: list,
+            synth_for_visual_benchmarking: torch.tensor,
+            real_for_visual_benchmarking: torch.tensor,
             **kwargs,
     ):
         super().__init__()
         bat = config["BATCH_SIZE"]
         self.config = config
         self.wandb_logger = wandb_logger
-        self.list_of_images_for_visual_benchmarking = list_of_images_for_visual_benchmarking
+        self.synth_for_visual_benchmarking = synth_for_visual_benchmarking
+        self.real_for_visual_benchmarking = real_for_visual_benchmarking
         # networks
         self.synth_generator = Generator()
         self.real_generator = Generator()
@@ -132,11 +135,12 @@ class CycleGAN(pl.LightningModule):
         self.log("val_loss", fake_loss)
 
     def on_validation_epoch_end(self):
-        z = self.list_of_images_for_visual_benchmarking.to(self.device)
-        # log sampled images
-        ganerated_images = self(z)
-        list_of_ganerated_ims = [T.ToPILImage()(img_tensor) for img_tensor in ganerated_images]
-        self.wandb_logger.log_image(key="generated_images", images=list_of_ganerated_ims)
+        z = self.synth_for_visual_benchmarking.to(self.device)
+        fake_real_images = self.real_generator(z)
+        Helpers.logTensorImagesViaWandbLogger(fake_real_images, self.wandb_logger, 'fake_real_val')
+        z = self.real_for_visual_benchmarking.to(self.device)
+        fake_synth_images = self.synth_generator(z)
+        Helpers.logTensorImagesViaWandbLogger(fake_synth_images, self.wandb_logger, 'fake_synth_val')
 
     def configure_optimizers(self):
         lr = self.config['LEARNING_RATE']

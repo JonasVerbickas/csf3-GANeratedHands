@@ -39,16 +39,18 @@ dm.setup()
 # Save a list of images that will ganerated and saved to wandb after each validation
 # (this is a good way to observe how the training is going visually)
 list_of_images_for_visual_benchmarking = None
-for i in dm.val_dataloader():
-    list_of_images_for_visual_benchmarking = i[0]
-    # use only the first batch
-    break
 for i in dm.train_dataloader():
     list_of_images_for_visual_benchmarking = torch.cat([i[0], list_of_images_for_visual_benchmarking])
+    wandb_logger.log_image(key="train_original_images",
+                        images=[T.ToPILImage()(img_tensor) for img_tensor in list_of_images_for_visual_benchmarking])
     # use only the first batch
     break
-wandb_logger.log_image(key="original_images",
-                       images=[T.ToPILImage()(img_tensor) for img_tensor in list_of_images_for_visual_benchmarking])
+for i in dm.val_dataloader():
+    list_of_images_for_visual_benchmarking = i[0]
+    wandb_logger.log_image(key="validation_original_images",
+                        images=[T.ToPILImage()(img_tensor) for img_tensor in list_of_images_for_visual_benchmarking])
+    # use only the first batch
+    break
 # Initialize model
 model = CycleGAN(config, wandb_logger, list_of_images_for_visual_benchmarking)
 print(ModelSummary(model))
